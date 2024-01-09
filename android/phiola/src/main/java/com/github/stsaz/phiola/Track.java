@@ -41,6 +41,7 @@ abstract class Filter {
 	public int process(TrackHandle t) {
 		return 0;
 	}
+
 }
 
 class TrackHandle {

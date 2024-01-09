@@ -288,6 +288,7 @@ public class MainActivity extends AppCompatActivity {
 			public int process(TrackHandle t) { return track_update(t); }
 		};
 		track.filter_add(trk_nfy);
+		track.filter_add(new Lyrics(track));
 		trackctl = new TrackCtl(core, this);
 		trackctl.connect();
 		trec = track.trec;
