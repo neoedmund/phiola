@@ -2,12 +2,12 @@ apply plugin: 'com.android.application'
 
 android {
 	namespace "com.github.stsaz.phiola"
-	compileSdk 33
-	buildToolsVersion '33.0.0'
+	compileSdk 34
+	buildToolsVersion '34.0.0'
 	defaultConfig {
 		applicationId "com.github.stsaz.phiola"
-		minSdkVersion 16
-		targetSdk 33
+		minSdkVersion 19
+		targetSdk 34
 		versionCode 20015
 		versionName '2.0-beta15'
 		testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
@@ -24,7 +24,7 @@ android {
 
 	buildTypes {
 		debug {
-			// applicationIdSuffix ".debug"
+			applicationIdSuffix ".debug"
 			minifyEnabled false
 		}
 		release {
@@ -37,11 +37,11 @@ android {
 
 dependencies {
 	implementation fileTree(dir: 'libs', include: ['*.jar'])
-	implementation 'androidx.appcompat:appcompat:1.5.1'
+	implementation 'androidx.appcompat:appcompat:1.6.1'
 	implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
-	implementation 'androidx.core:core:1.9.0'
-	implementation 'androidx.media:media:1.6.0'
-	implementation 'com.google.android.material:material:1.6.1'
+	implementation 'androidx.core:core:1.12.0'
+	implementation 'androidx.media:media:1.7.0'
+	implementation 'com.google.android.material:material:1.11.0'
 	testImplementation 'junit:junit:4.12'
 	androidTestImplementation 'androidx.test.ext:junit:1.1.3'
 	androidTestImplementation 'androidx.test.espresso:espresso-core:3.4.0'
