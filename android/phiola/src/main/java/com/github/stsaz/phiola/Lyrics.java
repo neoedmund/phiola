@@ -119,7 +119,16 @@ public class Lyrics extends Filter {
 
     private String getLineText(int p) {
         if (p < 0 || p >= lines.size()) return "";
-        return lines.get(p).text;
+        return specialFilter1(lines.get(p).text);
+    }
+
+    private String specialFilter1(String s) {
+        if (s == null) return "";
+        int p1 = s.indexOf("--(");
+        if (p1 > 0) {
+            s = s.substring(p1 + 2);
+        }
+        return s;
     }
 
     private List<Line> readLyrics(String url) throws IOException {
@@ -183,7 +192,7 @@ public class Lyrics extends Filter {
 
     public int process(TrackHandle tr) {
         if (lines == null) return 0;
-        if (justOpened && track.state()==Track.STATE_PLAYING) {
+        if (justOpened && track.state() == Track.STATE_PLAYING) {
             justOpened = false;
             if (resume()) return 0;
         }
