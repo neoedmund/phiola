@@ -45,6 +45,55 @@
 		app:layout_constraintStart_toStartOf="parent"
 		app:layout_constraintTop_toBottomOf="@+id/lname" />
 
+	<LinearLayout
+		android:id="@+id/lyrics_lines"
+		android:layout_width="match_parent"
+		android:layout_height="0dp"
+		android:layout_marginTop="40dp"
+		android:orientation="vertical"
+		android:visibility="invisible"
+		app:layout_constraintStart_toStartOf="parent"
+		app:layout_constraintTop_toTopOf="@id/lname">
+
+		<TextView
+			android:id="@+id/line_p2"
+			android:layout_width="match_parent"
+			android:layout_height="wrap_content"
+			android:fontFamily="serif"
+			android:text="-2"
+			android:textAlignment="center"
+			android:textSize="16sp" />
+
+		<TextView
+			android:id="@+id/line_p1"
+			android:layout_width="match_parent"
+			android:layout_height="wrap_content"
+			android:fontFamily="serif"
+			android:text="-1"
+			android:textAlignment="center"
+			android:textSize="16sp" />
+
+		<TextView
+			android:id="@+id/line_current"
+			android:layout_width="match_parent"
+			android:layout_height="wrap_content"
+			android:fontFamily="serif"
+			android:text="current"
+			android:textAlignment="center"
+			android:textSize="20sp"
+			android:textStyle="bold" />
+
+		<TextView
+			android:id="@+id/line_n1"
+			android:layout_width="match_parent"
+			android:layout_height="wrap_content"
+			android:fontFamily="serif"
+			android:text="+1"
+			android:textAlignment="center"
+			android:textSize="16sp"
+			android:visibility="gone" />
+	</LinearLayout>
+
 	<androidx.appcompat.widget.SearchView
 		android:id="@+id/tfilter"
 		android:layout_width="match_parent"
@@ -78,6 +127,8 @@
 		android:layout_height="wrap_content"
 		android:layout_marginVertical="5dp"
 		android:text="Lyrics"
+		android:textOff="Lyrics"
+		android:textOn="Lyrics"
 		app:layout_constraintBottom_toTopOf="@+id/seekbar"
 		app:layout_constraintStart_toEndOf="@id/bplaylist" />
 
@@ -96,9 +147,9 @@
 		android:layout_height="wrap_content"
 		android:contentDescription="@string/bplay"
 		android:src="@drawable/ic_rec"
-		android:tint="@color/control_button"
 		app:layout_constraintBottom_toBottomOf="parent"
-		app:layout_constraintStart_toStartOf="parent" />
+		app:layout_constraintStart_toStartOf="parent"
+		app:tint="@color/control_button" />
 
 	<ImageButton
 		android:id="@+id/bplay"
@@ -106,9 +157,9 @@
 		android:layout_height="wrap_content"
 		android:contentDescription="@string/brec"
 		android:src="@drawable/ic_play"
-		android:tint="@color/control_button"
 		app:layout_constraintBottom_toBottomOf="parent"
-		app:layout_constraintStart_toEndOf="@+id/brec" />
+		app:layout_constraintStart_toEndOf="@+id/brec"
+		app:tint="@color/control_button" />
 
 	<ImageButton
 		android:id="@+id/bprev"
@@ -116,7 +167,7 @@
 		android:layout_height="wrap_content"
 		android:contentDescription="@string/bprev"
 		android:src="@drawable/ic_prev"
-		android:tint="@color/control_button"
+		app:tint="@color/control_button"
 		app:layout_constraintBottom_toBottomOf="parent"
 		app:layout_constraintStart_toEndOf="@+id/bplay" />
 
@@ -126,9 +177,9 @@
 		android:layout_height="wrap_content"
 		android:contentDescription="@string/bnext"
 		android:src="@drawable/ic_next"
-		android:tint="@color/control_button"
 		app:layout_constraintBottom_toBottomOf="parent"
-		app:layout_constraintStart_toEndOf="@+id/bprev" />
+		app:layout_constraintStart_toEndOf="@+id/bprev"
+		app:tint="@color/control_button" />
 
 	<TextView
 		android:id="@+id/lpos"
@@ -137,7 +188,7 @@
 		android:textColor="@color/time_pos"
 		android:textSize="@dimen/text_label"
 		android:textStyle="bold"
-		app:layout_constraintBottom_toTopOf="@id/seekbar"
-		app:layout_constraintEnd_toEndOf="parent" />
+		app:layout_constraintEnd_toEndOf="parent"
+		app:layout_constraintTop_toTopOf="@id/seekbar" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -17,6 +17,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.PopupMenu;
 import android.widget.SeekBar;
+import android.widget.ToggleButton;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
@@ -56,7 +57,7 @@ public class MainActivity extends AppCompatActivity {
 	private PlaylistAdapter pl_adapter;
 	private PopupMenu mlist;
 
-	private MainBinding b;
+	MainBinding b;
 
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -288,13 +289,13 @@ public class MainActivity extends AppCompatActivity {
 			public int process(TrackHandle t) { return track_update(t); }
 		};
 		track.filter_add(trk_nfy);
-		track.filter_add(new Lyrics(track));
+		track.filter_add(new Lyrics(track,this));
 		trackctl = new TrackCtl(core, this);
 		trackctl.connect();
 		trec = track.trec;
 		return 0;
 	}
-
+	ToggleButton[] group1;
 	/** Set UI objects and register event handlers */
 	private void init_ui() {
 		setContentView(b.getRoot());
@@ -313,7 +314,10 @@ public class MainActivity extends AppCompatActivity {
 		b.bexplorer.setOnClickListener((v) -> explorer_click());
 
 		b.bplaylist.setOnClickListener((v) -> plist_click());
-		b.bplaylist.setChecked(true);
+		b.blyrics.setOnClickListener((v) -> lyrics_click());
+group1 = new ToggleButton[] {	b.bexplorer , b.bplaylist, b.blyrics	};
+		groupCheck(b.bplaylist);
+
 		bplaylist_text(queue.current_list_index());
 
 		b.seekbar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
@@ -349,6 +353,13 @@ public class MainActivity extends AppCompatActivity {
 		pl_adapter = new PlaylistAdapter(this, explorer);
 
 		gui.cur_activity = this;
+	}
+
+	private void groupCheck(ToggleButton btn0) {
+		for (ToggleButton btn: group1){
+			if (btn==btn0) btn.setChecked(true);
+			else btn.setChecked(false);
+		}
 	}
 
 	private void show_ui() {
@@ -406,28 +417,36 @@ public class MainActivity extends AppCompatActivity {
 	}
 
 	void explorer_click() {
-		b.bexplorer.setChecked(true);
+		groupCheck(b.bexplorer);
+		b.list.setVisibility(View.VISIBLE);
+		b.lyricsLines.setVisibility(View.GONE);
+
 		if (view_explorer) return;
 
 		pl_leave();
 		view_explorer = true;
-		b.bplaylist.setChecked(false);
 		b.tfilter.setVisibility(View.INVISIBLE);
 
 		explorer.fill();
 		pl_adapter.view_explorer = true;
 		list_update();
 	}
-
+	void lyrics_click() {
+		groupCheck(b.blyrics);
+		b.list.setVisibility(View.GONE);
+		b.lyricsLines.setVisibility(View.VISIBLE);
+		b.tfilter.setVisibility(View.GONE);
+	}
 	void plist_click() {
-		b.bplaylist.setChecked(true);
+		groupCheck(b.bplaylist);
+		b.list.setVisibility(View.VISIBLE);
+		b.lyricsLines.setVisibility(View.GONE);
 		if (!view_explorer) {
 			list_switch();
 			return;
 		}
 
 		view_explorer = false;
-		b.bexplorer.setChecked(false);
 		if (!gui.filter_hide)
 			b.tfilter.setVisibility(View.VISIBLE);
 
