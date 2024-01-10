@@ -14,6 +14,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -41,6 +42,7 @@ public class MainActivity extends AppCompatActivity {
     private static final int REQUEST_PERM_READ_STORAGE = 1;
     private static final int REQUEST_PERM_RECORD = 2;
     static final int REQUEST_STORAGE_ACCESS = 1;
+    private static final int SKIP_UNIT = 10000;
 
     private Core core;
     private GUI gui;
@@ -48,7 +50,7 @@ public class MainActivity extends AppCompatActivity {
     private QueueNotify quenfy;
     private Track track;
     private Filter trk_nfy;
-	private Filter lyrics;
+    private Filter lyrics;
     private TrackCtl trackctl;
     private int total_dur_msec;
     private int state;
@@ -61,6 +63,11 @@ public class MainActivity extends AppCompatActivity {
     private PopupMenu mlist;
 
     MainBinding b;
+    /**
+     * added for quick seeking
+     */
+    private int pos_msec;
+
 
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -227,7 +234,9 @@ public class MainActivity extends AppCompatActivity {
         return true;
     }
 
-    /** Called by OS with the result of requestPermissions(). */
+    /**
+     * Called by OS with the result of requestPermissions().
+     */
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         if (grantResults.length != 0)
@@ -251,7 +260,9 @@ public class MainActivity extends AppCompatActivity {
 		}*/
     }
 
-    /** Request system permissions */
+    /**
+     * Request system permissions
+     */
     private void init_system() {
         String[] perms = new String[]{
                 Manifest.permission.READ_EXTERNAL_STORAGE,
@@ -276,7 +287,9 @@ public class MainActivity extends AppCompatActivity {
         return true;
     }
 
-    /** Initialize core and modules */
+    /**
+     * Initialize core and modules
+     */
     private int init_mods() {
         core = Core.init_once(getApplicationContext());
         if (core == null)
@@ -294,10 +307,10 @@ public class MainActivity extends AppCompatActivity {
         };
         queue.nfy_add(quenfy);
         track = core.track();
-		lyrics=new Lyrics(track, this);
+        lyrics = new Lyrics(track, this);
         trk_nfy = new Filter() {
             public int open(TrackHandle t) {
-				lyrics.open(t);
+                lyrics.open(t);
                 return track_opening(t);
             }
 
@@ -310,7 +323,7 @@ public class MainActivity extends AppCompatActivity {
             }
 
             public int process(TrackHandle t) {
-				lyrics.process(t);
+                lyrics.process(t);
                 return track_update(t);
             }
         };
@@ -323,7 +336,9 @@ public class MainActivity extends AppCompatActivity {
 
     ToggleButton[] group1;
 
-    /** Set UI objects and register event handlers */
+    /**
+     * Set UI objects and register event handlers
+     */
     private void init_ui() {
         setContentView(b.getRoot());
 
@@ -333,6 +348,8 @@ public class MainActivity extends AppCompatActivity {
         b.brec.setOnClickListener((v) -> rec_click());
 
         b.bplay.setOnClickListener((v) -> play_pause_click());
+        b.bseekprev.setOnClickListener((v) -> trackctl.seek(safePosMs(pos_msec - SKIP_UNIT)));
+        b.bseeknext.setOnClickListener((v) -> trackctl.seek(safePosMs(pos_msec + SKIP_UNIT)));
 
         b.bnext.setOnClickListener((v) -> trackctl.next());
 
@@ -380,6 +397,13 @@ public class MainActivity extends AppCompatActivity {
         pl_adapter = new PlaylistAdapter(this, explorer);
 
         gui.cur_activity = this;
+    }
+
+    private int safePosMs(int p) {
+        Log.d("seek", "seek to safePosMs: " + p);
+        if (p < 0) return 0;
+        if (p > total_dur_msec) return total_dur_msec;
+        return p;
     }
 
     private void groupCheck(ToggleButton btn0) {
@@ -484,7 +508,9 @@ public class MainActivity extends AppCompatActivity {
         plist_show();
     }
 
-    /** Delete file and update view */
+    /**
+     * Delete file and update view
+     */
     private void file_del(int pos, String fn) {
         if (!core.setts.file_del) {
             String e = core.phiola.trash(core.setts.trash_dir, fn);
@@ -501,7 +527,9 @@ public class MainActivity extends AppCompatActivity {
         queue.remove(pos);
     }
 
-    /** Ask confirmation before deleting the currently playing file from storage */
+    /**
+     * Ask confirmation before deleting the currently playing file from storage
+     */
     private void file_del_cur() {
         int pos = queue.cur();
         if (pos < 0)
@@ -586,7 +614,9 @@ public class MainActivity extends AppCompatActivity {
         b.list.scrollToPosition(gui.list_pos);
     }
 
-    /** Called when we're leaving the playlist tab */
+    /**
+     * Called when we're leaving the playlist tab
+     */
     void pl_leave() {
         queue.filter("");
         LinearLayoutManager llm = (LinearLayoutManager) b.list.getLayoutManager();
@@ -606,7 +636,9 @@ public class MainActivity extends AppCompatActivity {
         b.bplaylist.setTextOff(s);
     }
 
-    /** Toggle playback auto-stop timer */
+    /**
+     * Toggle playback auto-stop timer
+     */
     private void play_auto_stop() {
         boolean b = queue.auto_stop();
         String s;
@@ -643,7 +675,9 @@ public class MainActivity extends AppCompatActivity {
         bplaylist_text(queue.current_list_index());
     }
 
-    /** Remove currently playing track from playlist */
+    /**
+     * Remove currently playing track from playlist
+     */
     private void list_rm() {
         int pos = queue.cur();
         if (pos < 0)
@@ -653,7 +687,9 @@ public class MainActivity extends AppCompatActivity {
         gui.msg_show(this, getString(R.string.mlist_trk_rm));
     }
 
-    /** Show dialog for saving playlist file */
+    /**
+     * Show dialog for saving playlist file
+     */
     private void list_save() {
         startActivity(new Intent(this, ListSaveActivity.class));
     }
@@ -673,7 +709,9 @@ public class MainActivity extends AppCompatActivity {
             core.gui().msg_show(this, String.format(getString(R.string.mlist_trk_added), qi + 1));
     }
 
-    /** Start recording */
+    /**
+     * Start recording
+     */
     private void rec_start() {
         if (!user_ask_record())
             return;
@@ -705,7 +743,9 @@ public class MainActivity extends AppCompatActivity {
         state(STATE_RECORDING, STATE_RECORDING);
     }
 
-    /** UI event from seek bar */
+    /**
+     * UI event from seek bar
+     */
     private void seek(int percent) {
         trackctl.seek(total_dur_msec / 100 * percent);
     }
@@ -751,7 +791,9 @@ public class MainActivity extends AppCompatActivity {
         return s;
     }
 
-    /** Playback state */
+    /**
+     * Playback state
+     */
     private void state(int st) {
         state(STATE_PLAYBACK, st);
     }
@@ -777,7 +819,9 @@ public class MainActivity extends AppCompatActivity {
         state = st;
     }
 
-    /** Called by Track when a new track is initialized */
+    /**
+     * Called by Track when a new track is initialized
+     */
     private int track_opening(TrackHandle t) {
         String title = t.name;
         if (!t.date.isEmpty())
@@ -795,7 +839,9 @@ public class MainActivity extends AppCompatActivity {
         return 0;
     }
 
-    /** Called by Track after a track is finished */
+    /**
+     * Called by Track after a track is finished
+     */
     private void track_closing(TrackHandle t) {
         b.lname.setText("");
         b.lpos.setText("");
@@ -809,7 +855,9 @@ public class MainActivity extends AppCompatActivity {
         state(STATE_PLAYBACK | STATE_AUTO_STOP, st);
     }
 
-    /** Called by Track during playback */
+    /**
+     * Called by Track during playback
+     */
     private int track_update(TrackHandle t) {
         core.dbglog(TAG, "track_update: state:%d pos:%d", t.state, t.pos_msec);
         switch (t.state) {
@@ -821,7 +869,8 @@ public class MainActivity extends AppCompatActivity {
                 state(STATE_PLAYING);
                 break;
         }
-
+        pos_msec = t.pos_msec;
+        Log.d("seek", "track_update: "+pos_msec);
         int pos = t.pos_msec / 1000;
         total_dur_msec = t.time_total_msec;
         int dur = t.time_total_msec / 1000;

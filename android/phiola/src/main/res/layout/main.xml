@@ -138,7 +138,7 @@
 		android:layout_height="wrap_content"
 		android:layout_marginVertical="5dp"
 		android:max="100"
-		app:layout_constraintBottom_toTopOf="@+id/bnext"
+		app:layout_constraintBottom_toTopOf="@id/bplay"
 		app:layout_constraintStart_toStartOf="parent" />
 
 	<ImageButton
@@ -162,14 +162,37 @@
 		app:tint="@color/control_button" />
 
 	<ImageButton
+		android:id="@+id/bseekprev"
+		android:layout_width="wrap_content"
+		android:layout_height="wrap_content"
+
+		android:src="@android:drawable/ic_media_rew"
+
+		app:layout_constraintBottom_toBottomOf="parent"
+		app:layout_constraintStart_toEndOf="@+id/bplay"
+		app:tint="@color/control_button" />
+
+	<ImageButton
+		android:id="@+id/bseeknext"
+		android:layout_width="wrap_content"
+		android:layout_height="wrap_content"
+
+		android:src="@android:drawable/ic_media_ff"
+
+		app:layout_constraintBottom_toBottomOf="parent"
+		app:layout_constraintStart_toEndOf="@+id/bseekprev"
+		app:tint="@color/control_button" />
+
+	<ImageButton
 		android:id="@+id/bprev"
 		android:layout_width="wrap_content"
 		android:layout_height="wrap_content"
 		android:contentDescription="@string/bprev"
 		android:src="@drawable/ic_prev"
-		app:tint="@color/control_button"
+		android:visibility="invisible"
 		app:layout_constraintBottom_toBottomOf="parent"
-		app:layout_constraintStart_toEndOf="@+id/bplay" />
+		app:layout_constraintStart_toEndOf="@id/bseeknext"
+		app:tint="@color/control_button" />
 
 	<ImageButton
 		android:id="@+id/bnext"
@@ -177,6 +200,7 @@
 		android:layout_height="wrap_content"
 		android:contentDescription="@string/bnext"
 		android:src="@drawable/ic_next"
+		android:visibility="invisible"
 		app:layout_constraintBottom_toBottomOf="parent"
 		app:layout_constraintStart_toEndOf="@+id/bprev"
 		app:tint="@color/control_button" />
