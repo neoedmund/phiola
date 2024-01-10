@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -17,9 +18,15 @@ import neoe.util.Finder;
 
 public class Lyrics extends Filter {
     private static final String TAG1 = "Lyrics";
+    private static final int QSIZE = 5;
     private final MainActivity acti;
+    private final Track track;
+    private String url;
+    private Integer pos;
+    private boolean justOpened;
 
     public Lyrics(Track track, MainActivity acti) {
+        this.track = track;
         this.acti = acti;
     }
 
@@ -34,11 +41,16 @@ public class Lyrics extends Filter {
 
     public int open(TrackHandle t) {
         String url = t.url;
+        this.url = url;
         lines = null;
         lastPos = -1;
         Log.d("me", "open: " + url);
         lines = cache.get(url);
-        if (lines != null) return 0;
+        if (lines != null) {
+            justOpened = true;
+
+            return 0;
+        }
         int p1 = url.lastIndexOf(".");
         if (p1 < 0) return 0;
         String url2 = url.substring(0, p1) + ".lrc";
@@ -49,11 +61,27 @@ public class Lyrics extends Filter {
             if (lines.isEmpty()) lines = null;
             else {
                 setLinePos(0);
+                justOpened = true;
             }
         } catch (Throwable ex) {
             Log.e("lyrics", "open: ", ex);
         }
         return 0;
+    }
+
+    private boolean resume() {
+        if (lines == null) return false;
+        try {
+            Integer pos = SmallPersistantMap.getInt(url);
+            Log.d(TAG1, String.format("try resume:(%s) for %s", pos, url));
+            if (pos == null) return false;
+            track.seek((int) lines.get(pos).ts);
+            Log.d(TAG1, "resume: linepos=" + pos);
+            return true;
+        } catch (Exception ex) {
+            Log.w("lyrics", "resume: " + ex);
+        }
+        return false;
     }
 
     private void setLinePos(int p) {
@@ -131,8 +159,34 @@ public class Lyrics extends Filter {
 //    }
 //    public void closed(TrackHandle t) {
 //    }
+
+    static class FixSizedQueue<T> {
+        int maxsize;
+
+        FixSizedQueue(int size) {
+            this.maxsize = size;
+        }
+
+        void add(T v) {
+            queue.add(v);
+            if (queue.size() > maxsize) queue.removeFirst();
+        }
+
+        int size() {
+            return queue.size();
+        }
+
+        LinkedList<T> queue = new LinkedList<T>();
+    }
+
+    FixSizedQueue queue = new FixSizedQueue<Integer>(QSIZE);
+
     public int process(TrackHandle tr) {
-        if (lines==null)return 0;
+        if (lines == null) return 0;
+        if (justOpened && track.state()==Track.STATE_PLAYING) {
+            justOpened = false;
+            if (resume()) return 0;
+        }
         int pos = tr.pos_msec;
         int size = lines.size();
         int f = size - 1;
@@ -145,6 +199,20 @@ public class Lyrics extends Filter {
         if (f < 0) f = 0;
         Log.d(TAG1, String.format("process: pos=%,d and linepos=%,d", pos, f));
         setLinePos(f);
+        queue.add(f);
+        if (f > 0 && queue.size() >= QSIZE
+                && ((Integer) queue.queue.getLast()) - ((Integer) queue.queue.getFirst())
+                <= QSIZE * 2) {
+            try {
+                SmallPersistantMap.put(url, f);
+                Log.d(TAG1, "record linepos=" + f);
+            } catch (Exception ex) {
+                Log.e(TAG1, "SmallPersistantMap.save " + ex);
+            }
+            queue.queue.clear();// wait for another round
+        }
         return 0;
     }
+
+
 }
