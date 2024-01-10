@@ -712,7 +712,7 @@ public class MainActivity extends AppCompatActivity {
 		if (st == state)
 			return;
 
-		String title = "φphiola";
+		String title = "φ♩♨♪☀♫☂♬";
 		getSupportActionBar().setTitle(String.format("%s %s", title, state_flags(st)));
 
 		if ((st & STATE_PLAYBACK) != (state & STATE_PLAYBACK)) {
