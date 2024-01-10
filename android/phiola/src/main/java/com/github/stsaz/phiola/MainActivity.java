@@ -1,5 +1,7 @@
-/** phiola/Android
-2022, Simon Zolin */
+/**
+ * phiola/Android
+ * 2022, Simon Zolin
+ */
 
 package com.github.stsaz.phiola;
 
@@ -12,11 +14,13 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.PopupMenu;
 import android.widget.SeekBar;
+import android.widget.ToggleButton;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
@@ -26,18 +30,19 @@ import androidx.appcompat.widget.SearchView;
 import androidx.core.app.ActivityCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
+import com.github.stsaz.phiola.databinding.MainBinding;
+
 import java.io.File;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
-
-import com.github.stsaz.phiola.databinding.MainBinding;
 
 public class MainActivity extends AppCompatActivity {
 	private static final String TAG = "phiola.MainActivity";
 	private static final int REQUEST_PERM_READ_STORAGE = 1;
 	private static final int REQUEST_PERM_RECORD = 2;
 	static final int REQUEST_STORAGE_ACCESS = 1;
+	private static final int SKIP_UNIT = 10000;
 
 	private Core core;
 	private GUI gui;
@@ -45,6 +50,7 @@ public class MainActivity extends AppCompatActivity {
 	private QueueNotify quenfy;
 	private Track track;
 	private Filter trk_nfy;
+	private Filter lyrics;
 	private TrackCtl trackctl;
 	private int total_dur_msec;
 	private int state;
@@ -56,7 +62,12 @@ public class MainActivity extends AppCompatActivity {
 	private PlaylistAdapter pl_adapter;
 	private PopupMenu mlist;
 
-	private MainBinding b;
+	MainBinding b;
+	/**
+	 * added for quick seeking
+	 */
+	private int pos_msec;
+
 
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -172,49 +183,60 @@ public class MainActivity extends AppCompatActivity {
 
 	private boolean list_menu_click(MenuItem item) {
 		switch (item.getItemId()) {
-		case R.id.action_list_new:
-			list_new();  break;
+			case R.id.action_list_new:
+				list_new();
+				break;
 
-		case R.id.action_list_close:
-			list_close();  break;
+			case R.id.action_list_close:
+				list_close();
+				break;
 
-		case R.id.action_list_add:
-			startActivity(new Intent(this, AddURLActivity.class));  break;
+			case R.id.action_list_add:
+				startActivity(new Intent(this, AddURLActivity.class));
+				break;
 
-		case R.id.action_list_rm:
-			list_rm();  break;
+			case R.id.action_list_rm:
+				list_rm();
+				break;
 
-		case R.id.action_list_clear:
-			queue.clear();  break;
+			case R.id.action_list_clear:
+				queue.clear();
+				break;
 
-		case R.id.action_list_save:
-			list_save();  break;
+			case R.id.action_list_save:
+				list_save();
+				break;
 
-		case R.id.action_list_showcur: {
-			if (view_explorer)
-				plist_click();
-			int pos = queue.cur();
-			if (pos >= 0)
-				b.list.scrollToPosition(pos);
-			break;
-		}
+			case R.id.action_list_showcur: {
+				if (view_explorer)
+					plist_click();
+				int pos = queue.cur();
+				if (pos >= 0)
+					b.list.scrollToPosition(pos);
+				break;
+			}
 
-		case R.id.action_list_next_add_cur:
-			list_next_add_cur();  break;
+			case R.id.action_list_next_add_cur:
+				list_next_add_cur();
+				break;
 
-		case R.id.action_list_sort:
-			queue.sort(Phiola.QU_SORT_FILENAME);  break;
+			case R.id.action_list_sort:
+				queue.sort(Phiola.QU_SORT_FILENAME);
+				break;
 
-		case R.id.action_list_shuffle:
-			queue.sort(Phiola.QU_SORT_RANDOM);  break;
+			case R.id.action_list_shuffle:
+				queue.sort(Phiola.QU_SORT_RANDOM);
+				break;
 
-		default:
-			return false;
+			default:
+				return false;
 		}
 		return true;
 	}
 
-	/** Called by OS with the result of requestPermissions(). */
+	/**
+	 * Called by OS with the result of requestPermissions().
+	 */
 	public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
 		super.onRequestPermissionsResult(requestCode, permissions, grantResults);
 		if (grantResults.length != 0)
@@ -238,7 +260,9 @@ public class MainActivity extends AppCompatActivity {
 		}*/
 	}
 
-	/** Request system permissions */
+	/**
+	 * Request system permissions
+	 */
 	private void init_system() {
 		String[] perms = new String[]{
 				Manifest.permission.READ_EXTERNAL_STORAGE,
@@ -263,7 +287,9 @@ public class MainActivity extends AppCompatActivity {
 		return true;
 	}
 
-	/** Initialize core and modules */
+	/**
+	 * Initialize core and modules
+	 */
 	private int init_mods() {
 		core = Core.init_once(getApplicationContext());
 		if (core == null)
@@ -281,21 +307,38 @@ public class MainActivity extends AppCompatActivity {
 		};
 		queue.nfy_add(quenfy);
 		track = core.track();
+		lyrics = new Lyrics(track, this);
 		trk_nfy = new Filter() {
-			public int open(TrackHandle t) { return track_opening(t); }
-			public void close(TrackHandle t) { track_closing(t); }
-			public void closed(TrackHandle t) { track_closed(t); }
-			public int process(TrackHandle t) { return track_update(t); }
+			public int open(TrackHandle t) {
+				lyrics.open(t);
+				return track_opening(t);
+			}
+
+			public void close(TrackHandle t) {
+				track_closing(t);
+			}
+
+			public void closed(TrackHandle t) {
+				track_closed(t);
+			}
+
+			public int process(TrackHandle t) {
+				lyrics.process(t);
+				return track_update(t);
+			}
 		};
 		track.filter_add(trk_nfy);
-		track.filter_add(new Lyrics(track));
 		trackctl = new TrackCtl(core, this);
 		trackctl.connect();
 		trec = track.trec;
 		return 0;
 	}
 
-	/** Set UI objects and register event handlers */
+	ToggleButton[] group1;
+
+	/**
+	 * Set UI objects and register event handlers
+	 */
 	private void init_ui() {
 		setContentView(b.getRoot());
 
@@ -305,6 +348,8 @@ public class MainActivity extends AppCompatActivity {
 		b.brec.setOnClickListener((v) -> rec_click());
 
 		b.bplay.setOnClickListener((v) -> play_pause_click());
+		b.bseekprev.setOnClickListener((v) -> trackctl.seek(safePosMs(pos_msec - SKIP_UNIT)));
+		b.bseeknext.setOnClickListener((v) -> trackctl.seek(safePosMs(pos_msec + SKIP_UNIT)));
 
 		b.bnext.setOnClickListener((v) -> trackctl.next());
 
@@ -313,7 +358,10 @@ public class MainActivity extends AppCompatActivity {
 		b.bexplorer.setOnClickListener((v) -> explorer_click());
 
 		b.bplaylist.setOnClickListener((v) -> plist_click());
-		b.bplaylist.setChecked(true);
+		b.blyrics.setOnClickListener((v) -> lyrics_click());
+		group1 = new ToggleButton[]{b.bexplorer, b.bplaylist, b.blyrics};
+		groupCheck(b.bplaylist);
+
 		bplaylist_text(queue.current_list_index());
 
 		b.seekbar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
@@ -349,6 +397,20 @@ public class MainActivity extends AppCompatActivity {
 		pl_adapter = new PlaylistAdapter(this, explorer);
 
 		gui.cur_activity = this;
+	}
+
+	private int safePosMs(int p) {
+		Log.d("seek", "seek to safePosMs: " + p);
+		if (p < 0) return 0;
+		if (p > total_dur_msec) return total_dur_msec;
+		return p;
+	}
+
+	private void groupCheck(ToggleButton btn0) {
+		for (ToggleButton btn : group1) {
+			if (btn == btn0) btn.setChecked(true);
+			else btn.setChecked(false);
+		}
 	}
 
 	private void show_ui() {
@@ -406,12 +468,14 @@ public class MainActivity extends AppCompatActivity {
 	}
 
 	void explorer_click() {
-		b.bexplorer.setChecked(true);
+		groupCheck(b.bexplorer);
+		b.list.setVisibility(View.VISIBLE);
+		b.lyricsLines.setVisibility(View.GONE);
+
 		if (view_explorer) return;
 
 		pl_leave();
 		view_explorer = true;
-		b.bplaylist.setChecked(false);
 		b.tfilter.setVisibility(View.INVISIBLE);
 
 		explorer.fill();
@@ -419,15 +483,23 @@ public class MainActivity extends AppCompatActivity {
 		list_update();
 	}
 
+	void lyrics_click() {
+		groupCheck(b.blyrics);
+		b.list.setVisibility(View.GONE);
+		b.lyricsLines.setVisibility(View.VISIBLE);
+		b.tfilter.setVisibility(View.GONE);
+	}
+
 	void plist_click() {
-		b.bplaylist.setChecked(true);
+		groupCheck(b.bplaylist);
+		b.list.setVisibility(View.VISIBLE);
+		b.lyricsLines.setVisibility(View.GONE);
 		if (!view_explorer) {
 			list_switch();
 			return;
 		}
 
 		view_explorer = false;
-		b.bexplorer.setChecked(false);
 		if (!gui.filter_hide)
 			b.tfilter.setVisibility(View.VISIBLE);
 
@@ -436,7 +508,9 @@ public class MainActivity extends AppCompatActivity {
 		plist_show();
 	}
 
-	/** Delete file and update view */
+	/**
+	 * Delete file and update view
+	 */
 	private void file_del(int pos, String fn) {
 		if (!core.setts.file_del) {
 			String e = core.phiola.trash(core.setts.trash_dir, fn);
@@ -453,7 +527,9 @@ public class MainActivity extends AppCompatActivity {
 		queue.remove(pos);
 	}
 
-	/** Ask confirmation before deleting the currently playing file from storage */
+	/**
+	 * Ask confirmation before deleting the currently playing file from storage
+	 */
 	private void file_del_cur() {
 		int pos = queue.cur();
 		if (pos < 0)
@@ -538,10 +614,12 @@ public class MainActivity extends AppCompatActivity {
 		b.list.scrollToPosition(gui.list_pos);
 	}
 
-	/** Called when we're leaving the playlist tab */
+	/**
+	 * Called when we're leaving the playlist tab
+	 */
 	void pl_leave() {
 		queue.filter("");
-		LinearLayoutManager llm = (LinearLayoutManager)b.list.getLayoutManager();
+		LinearLayoutManager llm = (LinearLayoutManager) b.list.getLayoutManager();
 		gui.list_pos = llm.findLastCompletelyVisibleItemPosition();
 	}
 
@@ -558,7 +636,9 @@ public class MainActivity extends AppCompatActivity {
 		b.bplaylist.setTextOff(s);
 	}
 
-	/** Toggle playback auto-stop timer */
+	/**
+	 * Toggle playback auto-stop timer
+	 */
 	private void play_auto_stop() {
 		boolean b = queue.auto_stop();
 		String s;
@@ -577,7 +657,7 @@ public class MainActivity extends AppCompatActivity {
 		if (qi < 0)
 			return;
 
-		gui.msg_show(this, String.format(getString(R.string.mlist_created), qi+1));
+		gui.msg_show(this, String.format(getString(R.string.mlist_created), qi + 1));
 		queue.switch_list(qi);
 		if (view_explorer)
 			plist_click();
@@ -595,7 +675,9 @@ public class MainActivity extends AppCompatActivity {
 		bplaylist_text(queue.current_list_index());
 	}
 
-	/** Remove currently playing track from playlist */
+	/**
+	 * Remove currently playing track from playlist
+	 */
 	private void list_rm() {
 		int pos = queue.cur();
 		if (pos < 0)
@@ -605,7 +687,9 @@ public class MainActivity extends AppCompatActivity {
 		gui.msg_show(this, getString(R.string.mlist_trk_rm));
 	}
 
-	/** Show dialog for saving playlist file */
+	/**
+	 * Show dialog for saving playlist file
+	 */
 	private void list_save() {
 		startActivity(new Intent(this, ListSaveActivity.class));
 	}
@@ -622,10 +706,12 @@ public class MainActivity extends AppCompatActivity {
 	private void list_next_add_cur() {
 		int qi = queue.next_list_add_cur();
 		if (qi >= 0)
-			core.gui().msg_show(this, String.format(getString(R.string.mlist_trk_added), qi+1));
+			core.gui().msg_show(this, String.format(getString(R.string.mlist_trk_added), qi + 1));
 	}
 
-	/** Start recording */
+	/**
+	 * Start recording
+	 */
 	private void rec_start() {
 		if (!user_ask_record())
 			return;
@@ -646,9 +732,9 @@ public class MainActivity extends AppCompatActivity {
 				, core.setts.rec_path, dt[0], dt[1], dt[2], dt[3], dt[4], dt[5]
 				, core.setts.rec_fmt);
 		trec = track.rec_start(fname, () -> {
-				Handler mloop = new Handler(Looper.getMainLooper());
-				mloop.post(this::rec_click);
-			});
+			Handler mloop = new Handler(Looper.getMainLooper());
+			mloop.post(this::rec_click);
+		});
 		if (trec == null)
 			return;
 		rec_state_set(true);
@@ -657,18 +743,20 @@ public class MainActivity extends AppCompatActivity {
 		state(STATE_RECORDING, STATE_RECORDING);
 	}
 
-	/** UI event from seek bar */
+	/**
+	 * UI event from seek bar
+	 */
 	private void seek(int percent) {
-		trackctl.seek( total_dur_msec / 100 * percent);
+		trackctl.seek(total_dur_msec / 100 * percent);
 	}
 
 	private static final int
-		STATE_DEF = 1,
-		STATE_PLAYING = 2,
-		STATE_PAUSED = 4,
-		STATE_PLAYBACK = 7,
-		STATE_AUTO_STOP = 8,
-		STATE_RECORDING = 0x10;
+			STATE_DEF = 1,
+			STATE_PLAYING = 2,
+			STATE_PAUSED = 4,
+			STATE_PLAYBACK = 7,
+			STATE_AUTO_STOP = 8,
+			STATE_RECORDING = 0x10;
 
 	// [Playing]
 	// [PLA,STP,REC]
@@ -703,8 +791,13 @@ public class MainActivity extends AppCompatActivity {
 		return s;
 	}
 
-	/** Playback state */
-	private void state(int st) { state(STATE_PLAYBACK, st); }
+	/**
+	 * Playback state
+	 */
+	private void state(int st) {
+		state(STATE_PLAYBACK, st);
+	}
+
 	private void state(int mask, int val) {
 		int st = state & ~mask;
 		if (val != 0)
@@ -726,7 +819,9 @@ public class MainActivity extends AppCompatActivity {
 		state = st;
 	}
 
-	/** Called by Track when a new track is initialized */
+	/**
+	 * Called by Track when a new track is initialized
+	 */
 	private int track_opening(TrackHandle t) {
 		String title = t.name;
 		if (!t.date.isEmpty())
@@ -744,7 +839,9 @@ public class MainActivity extends AppCompatActivity {
 		return 0;
 	}
 
-	/** Called by Track after a track is finished */
+	/**
+	 * Called by Track after a track is finished
+	 */
 	private void track_closing(TrackHandle t) {
 		b.lname.setText("");
 		b.lpos.setText("");
@@ -758,7 +855,9 @@ public class MainActivity extends AppCompatActivity {
 		state(STATE_PLAYBACK | STATE_AUTO_STOP, st);
 	}
 
-	/** Called by Track during playback */
+	/**
+	 * Called by Track during playback
+	 */
 	private int track_update(TrackHandle t) {
 		core.dbglog(TAG, "track_update: state:%d pos:%d", t.state, t.pos_msec);
 		switch (t.state) {
@@ -770,7 +869,8 @@ public class MainActivity extends AppCompatActivity {
 				state(STATE_PLAYING);
 				break;
 		}
-
+		pos_msec = t.pos_msec;
+		Log.d("seek", "track_update: "+pos_msec);
 		int pos = t.pos_msec / 1000;
 		total_dur_msec = t.time_total_msec;
 		int dur = t.time_total_msec / 1000;
