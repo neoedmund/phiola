@@ -17,7 +17,7 @@ import neoe.util.FileUtil;
 import neoe.util.Finder;
 
 public class Lyrics extends Filter {
-    private static final String TAG1 = "Lyrics";
+    private static final String TAG = "Lyrics";
     private static final int QSIZE = 5;
     private final MainActivity acti;
     private final Track track;
@@ -48,7 +48,6 @@ public class Lyrics extends Filter {
         lines = cache.get(url);
         if (lines != null) {
             justOpened = true;
-
             return 0;
         }
         int p1 = url.lastIndexOf(".");
@@ -57,7 +56,7 @@ public class Lyrics extends Filter {
         try {
             lines = readLyrics(url2);
             cache.put(url, lines);
-            Log.d(TAG1, String.format("open:read %,d lines of lyrics", lines.size()));
+            Log.d(TAG, String.format("open:read %,d lines of lyrics", lines.size()));
             if (lines.isEmpty()) lines = null;
             else {
                 setLinePos(0);
@@ -73,10 +72,13 @@ public class Lyrics extends Filter {
         if (lines == null) return false;
         try {
             Integer pos = SmallPersistantMap.getInt(url);
-            Log.d(TAG1, String.format("try resume:(%s) for %s", pos, url));
+            Log.d(TAG, String.format("try resume:(%s) for %s", pos, url));
             if (pos == null) return false;
-            track.seek((int) lines.get(pos).ts);
-            Log.d(TAG1, "resume: linepos=" + pos);
+            int ms = (int) lines.get(pos).ts;
+            ms -= 1000;//why, but needed...
+            if (ms < 0) ms = 0;
+            track.seek(ms);
+            Log.d(TAG, "resume: linepos=" + pos);
             return true;
         } catch (Exception ex) {
             Log.w("lyrics", "resume: " + ex);
@@ -104,7 +106,7 @@ public class Lyrics extends Filter {
                         b.lineP1.setText(getLineText(p - 1));
                         b.lineP2.setText(getLineText(p - 2));
                     } catch (Exception ex) {
-                        Log.w(TAG1, "setUILines: " + ex);
+                        Log.w(TAG, "setUILines: " + ex);
                     }
                 });
                 return true;
@@ -112,7 +114,7 @@ public class Lyrics extends Filter {
                 return false;
             }
         } catch (Exception ex) {
-            Log.w(TAG1, "setUILines: " + ex);
+            Log.w(TAG, "setUILines: " + ex);
         }
         return false;
     }
@@ -122,13 +124,37 @@ public class Lyrics extends Filter {
         return specialFilter1(lines.get(p).text);
     }
 
-    private String specialFilter1(String s) {
+    private static String specialFilter1(String s) {
         if (s == null) return "";
-        int p1 = s.indexOf("--(");
-        if (p1 > 0) {
-            s = s.substring(p1 + 2);
+        //step1
+        {
+            int p1 = s.indexOf("--(");
+            if (p1 > 0) {
+                s = s.substring(p1 + 3);
+                if (s.endsWith(")")) s = s.substring(0, s.length() - 1);
+            }
+        }
+        //step2
+        int safe = 0;
+        while (true) {
+            if (safe++ > 10) break;
+            int p1 = s.indexOf("(");
+            if (p1 < 0) break;
+            int p2 = s.indexOf(")", p1 + 1);
+            if (p2 < 0) break;
+            String s2 = s.substring(p1 + 1, p2);
+            if (s2.startsWith("st ") || allIn(s2, "0123456789,/")) {
+                s = s.substring(0, p1) + s.substring(p2 + 1);
+            } else break;
         }
         return s;
+    }
+
+    private static boolean allIn(String s, String pat) {
+        for (char c : s.toCharArray()) {
+            if (pat.indexOf(c) < 0) return false;
+        }
+        return true;
     }
 
     private List<Line> readLyrics(String url) throws IOException {
@@ -206,7 +232,7 @@ public class Lyrics extends Filter {
             }
         }
         if (f < 0) f = 0;
-        Log.d(TAG1, String.format("process: pos=%,d and linepos=%,d", pos, f));
+        Log.d(TAG, String.format("process: pos=%,d and linepos=%,d", pos, f));
         setLinePos(f);
         queue.add(f);
         if (f > 0 && queue.size() >= QSIZE
@@ -214,9 +240,9 @@ public class Lyrics extends Filter {
                 <= QSIZE * 2) {
             try {
                 SmallPersistantMap.put(url, f);
-                Log.d(TAG1, "record linepos=" + f);
+                Log.d(TAG, "record linepos=" + f);
             } catch (Exception ex) {
-                Log.e(TAG1, "SmallPersistantMap.save " + ex);
+                Log.e(TAG, "SmallPersistantMap.save " + ex);
             }
             queue.queue.clear();// wait for another round
         }
