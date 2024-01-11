@@ -14,9 +14,10 @@ It's a free and open-source project, and you can use it as a standalone applicat
 
 # neoe patches
 
-![](res/phiola.svg)![](res/phiola.svg)
+![](res/phiola.svg)![](res/phiola.svg)  ☀♫☂♬
 
 * external .lrc lyrics support
+![](res/ss1lrc_s.webp)![](res/ss1lrc_s.webp)
 * resume last play position
 * other UI customization
 
