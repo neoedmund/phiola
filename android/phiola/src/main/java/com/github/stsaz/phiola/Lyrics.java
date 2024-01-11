@@ -22,8 +22,8 @@ public class Lyrics extends Filter {
     private final MainActivity acti;
     private final Track track;
     private String url;
-    private Integer pos;
     private boolean justOpened;
+    private int hint;
 
     public Lyrics(Track track, MainActivity acti) {
         this.track = track;
@@ -38,6 +38,7 @@ public class Lyrics extends Filter {
     List<Line> lines;
     int lastPos;
     static Map<String, List<Line>> cache = Collections.synchronizedMap(new HashMap<>());
+
 
     public int open(TrackHandle t) {
         String url = t.url;
@@ -84,6 +85,10 @@ public class Lyrics extends Filter {
             Log.w("lyrics", "resume: " + ex);
         }
         return false;
+    }
+
+    public void seeked(int ms) {
+        hint = 0;
     }
 
     private void setLinePos(int p) {
@@ -216,23 +221,31 @@ public class Lyrics extends Filter {
 
     FixSizedQueue queue = new FixSizedQueue<Integer>(QSIZE);
 
-    public int process(TrackHandle tr) {
-        if (lines == null) return 0;
-        if (justOpened && track.state() == Track.STATE_PLAYING) {
-            justOpened = false;
-            if (resume()) return 0;
-        }
-        int pos = tr.pos_msec;
+    private int locate(long pos, int hint0) {
         int size = lines.size();
         int f = size - 1;
-        for (int i = 0; i < size; i++) {
+        for (int i = hint0; i < size; i++) {
             if (lines.get(i).ts > pos) {
                 f = i - 1;
                 break;
             }
         }
         if (f < 0) f = 0;
-        Log.d(TAG, String.format("process: pos=%,d and linepos=%,d", pos, f));
+        if (f == size - 1 && hint0 > 0) {
+            f = locate(pos, 0);
+        }
+        Log.d(TAG, String.format("process: pos=%,d and linepos=%,d, lastPos=%,d hint=%,d", pos, f, lastPos, hint));
+        hint = f;
+        return f;
+    }
+
+    public int process(TrackHandle tr) {
+        if (lines == null) return 0;
+        if (justOpened && track.state() == Track.STATE_PLAYING) {
+            justOpened = false;
+            if (resume()) return 0;
+        }
+        int f = locate(tr.pos_msec, hint);
         setLinePos(f);
         queue.add(f);
         if (f > 0 && queue.size() >= QSIZE

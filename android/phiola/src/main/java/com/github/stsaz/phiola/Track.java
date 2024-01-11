@@ -42,6 +42,10 @@ abstract class Filter {
 		return 0;
 	}
 
+	public void seeked(int ms){
+
+	}
+
 }
 
 class TrackHandle {
@@ -503,6 +507,7 @@ class Track {
 		if (tplay.state == STATE_PLAYING || tplay.state == STATE_PAUSED) {
 			tplay.seek_msec = msec;
 			tplay.pos_msec = msec;
+			seeked(msec);
 			update(tplay);
 		}
 	}
@@ -513,6 +518,11 @@ class Track {
 	void update(TrackHandle t) {
 		for (Filter f : filters) {
 			f.process(t);
+		}
+	}
+	void seeked(int t) {
+		for (Filter f : filters) {
+			f.seeked(t);
 		}
 	}
 }
