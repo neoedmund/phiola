@@ -1,12 +1,13 @@
-/** phiola/Android
-2022, Simon Zolin */
+/**
+ * phiola/Android
+ * 2022, Simon Zolin
+ */
 
 package com.github.stsaz.phiola;
 
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
-
 import android.widget.ArrayAdapter;
 import android.widget.SeekBar;
 
@@ -15,262 +16,280 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.github.stsaz.phiola.databinding.ConvertBinding;
 
 public class ConvertActivity extends AppCompatActivity {
-	private static final String TAG = "phiola.ConvertActivity";
-	Core core;
-	private int qu_cur_pos;
-	private ConvertBinding b;
+    private static final String TAG = "phiola.ConvertActivity";
+    Core core;
+    private int qu_cur_pos;
+    private ConvertBinding b;
 
-	@Override
-	protected void onCreate(Bundle savedInstanceState) {
-		super.onCreate(savedInstanceState);
-		b = ConvertBinding.inflate(getLayoutInflater());
-		setContentView(b.getRoot());
-		b.bFromSetCur.setOnClickListener((v) -> pos_set_cur(true));
-		b.bUntilSetCur.setOnClickListener((v) -> pos_set_cur(false));
-		b.bStart.setOnClickListener((v) -> convert());
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        b = ConvertBinding.inflate(getLayoutInflater());
+        setContentView(b.getRoot());
+        b.bFromSetCur.setOnClickListener((v) -> pos_set_cur(true));
+        b.bUntilSetCur.setOnClickListener((v) -> pos_set_cur(false));
+        b.bStart.setOnClickListener((v) -> convert());
 
-		ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item
-			, CoreSettings.conv_extensions);
-		adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-		b.spOutExt.setAdapter(adapter);
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item
+                , CoreSettings.conv_extensions);
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        b.spOutExt.setAdapter(adapter);
 
-		// 8..800 by 8; 1..5
-		b.sbAacQ.setMax(aac_q_progress(5));
-		b.sbAacQ.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-				@Override
-				public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-					if (fromUser) {
-						int val = aac_q_value(progress);
-						String s;
-						if (val <= 5)
-							s = "VBR:" + core.int_to_str(val);
-						else
-							s = core.int_to_str(val);
-						b.eAacQ.setText(s);
-					}
-				}
+        // 8..800 by 8; 1..5
+        b.sbAacQ.setMax(aac_q_progress(5));
+        b.sbAacQ.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                if (fromUser) {
+                    int val = aac_q_value(progress);
+                    String s;
+                    if (val <= 5)
+                        s = "VBR:" + core.int_to_str(val);
+                    else
+                        s = core.int_to_str(val);
+                    b.eAacQ.setText(s);
+                }
+            }
 
-				@Override
-				public void onStartTrackingTouch(SeekBar seekBar) {}
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+            }
 
-				@Override
-				public void onStopTrackingTouch(SeekBar seekBar) {}
-			});
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+            }
+        });
 
-		// 8..504 by 8
-		b.sbOpusQ.setMax(opus_q_progress(510));
-		b.sbOpusQ.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-				@Override
-				public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-					if (fromUser)
-						b.eOpusQ.setText(core.int_to_str(opus_q_value(progress)));
-				}
+        // 8..504 by 8
+        b.sbOpusQ.setMax(opus_q_progress(510));
+        b.sbOpusQ.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                if (fromUser)
+                    b.eOpusQ.setText(core.int_to_str(opus_q_value(progress)));
+            }
 
-				@Override
-				public void onStartTrackingTouch(SeekBar seekBar) {}
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+            }
 
-				@Override
-				public void onStopTrackingTouch(SeekBar seekBar) {}
-			});
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+            }
+        });
 
-		// 1..10
-		b.sbVorbisQ.setMax(vorbis_q_progress(10));
-		b.sbVorbisQ.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-				@Override
-				public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-					if (fromUser)
-						b.eVorbisQ.setText(core.int_to_str(vorbis_q_value(progress)));
-				}
+        // 1..10
+        b.sbVorbisQ.setMax(vorbis_q_progress(10));
+        b.sbVorbisQ.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                if (fromUser)
+                    b.eVorbisQ.setText(core.int_to_str(vorbis_q_value(progress)));
+            }
 
-				@Override
-				public void onStartTrackingTouch(SeekBar seekBar) {}
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+            }
 
-				@Override
-				public void onStopTrackingTouch(SeekBar seekBar) {}
-			});
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+            }
+        });
 
-		b.swCopy.setOnCheckedChangeListener((v, checked) -> {
-				b.eSampleRate.setEnabled(!checked);
+        b.swCopy.setOnCheckedChangeListener((v, checked) -> {
+            b.eSampleRate.setEnabled(!checked);
 
-				b.sbAacQ.setEnabled(!checked);
-				b.eAacQ.setEnabled(!checked);
+            b.sbAacQ.setEnabled(!checked);
+            b.eAacQ.setEnabled(!checked);
 
-				b.sbOpusQ.setEnabled(!checked);
-				b.eOpusQ.setEnabled(!checked);
+            b.sbOpusQ.setEnabled(!checked);
+            b.eOpusQ.setEnabled(!checked);
 
-				b.sbVorbisQ.setEnabled(!checked);
-				b.eVorbisQ.setEnabled(!checked);
-			});
+            b.sbVorbisQ.setEnabled(!checked);
+            b.eVorbisQ.setEnabled(!checked);
+        });
 
-		core = Core.getInstance();
-		load();
+        core = Core.getInstance();
+        load();
 
-		qu_cur_pos = core.queue().cur();
-		String iname = getIntent().getStringExtra("iname");
-		b.eInName.setText(iname);
+        qu_cur_pos = core.queue().cur();
+        String iname = getIntent().getStringExtra("iname");
+        b.eInName.setText(iname);
 
-		int sl = iname.lastIndexOf('/');
-		if (sl < 0)
-			sl = 0;
-		else
-			sl++;
-		b.eOutDir.setText(iname.substring(0, sl));
+        int sl = iname.lastIndexOf('/');
+        if (sl < 0)
+            sl = 0;
+        else
+            sl++;
+        b.eOutDir.setText(iname.substring(0, sl));
 
-		int pos = iname.lastIndexOf('.');
-		if (pos < 0)
-			pos = 0;
-		b.eOutName.setText(iname.substring(sl, pos));
-	}
+        int pos = iname.lastIndexOf('.');
+        if (pos < 0)
+            pos = 0;
+        b.eOutName.setText(iname.substring(sl, pos));
+    }
 
-	private int conv_extension(String s) {
-		for (int i = 0; i < CoreSettings.conv_extensions.length; i++) {
-			if (CoreSettings.conv_extensions[i].equals(s))
-				return i;
-		}
-		return -1;
-	}
+    private int conv_extension(String s) {
+        for (int i = 0; i < CoreSettings.conv_extensions.length; i++) {
+            if (CoreSettings.conv_extensions[i].equals(s))
+                return i;
+        }
+        return -1;
+    }
 
-	private static int aac_q_value(int progress) {
-		if (progress > (800 - 8) / 8)
-			return progress - (800 - 8) / 8;
-		return 8 + progress * 8;
-	}
-	private static int aac_q_progress(int q) {
-		if (q <= 5)
-			return (800 - 8) / 8 + q;
-		return (q - 8) / 8;
-	}
+    private static int aac_q_value(int progress) {
+        if (progress > (800 - 8) / 8)
+            return progress - (800 - 8) / 8;
+        return 8 + progress * 8;
+    }
 
-	private static int opus_q_value(int progress) { return 8 + progress * 8; }
-	private static int opus_q_progress(int q) { return (q - 8) / 8; }
+    private static int aac_q_progress(int q) {
+        if (q <= 5)
+            return (800 - 8) / 8 + q;
+        return (q - 8) / 8;
+    }
 
-	private static int vorbis_q_value(int progress) { return 1 + progress; }
-	private static int vorbis_q_progress(int q) { return q - 1; }
+    private static int opus_q_value(int progress) {
+        return 8 + progress * 8;
+    }
 
-	private void load() {
-		b.spOutExt.setSelection(conv_extension(core.setts.conv_outext));
+    private static int opus_q_progress(int q) {
+        return (q - 8) / 8;
+    }
 
-		b.sbAacQ.setProgress(aac_q_progress(core.setts.conv_aac_quality));
-		b.eAacQ.setText(core.int_to_str(core.setts.conv_aac_quality));
+    private static int vorbis_q_value(int progress) {
+        return 1 + progress;
+    }
 
-		b.sbOpusQ.setProgress((core.setts.conv_opus_quality - 8) / 8);
-		b.eOpusQ.setText(core.int_to_str(core.setts.conv_opus_quality));
+    private static int vorbis_q_progress(int q) {
+        return q - 1;
+    }
 
-		b.sbVorbisQ.setProgress(vorbis_q_progress(core.setts.conv_vorbis_quality));
-		b.eVorbisQ.setText(core.int_to_str(core.setts.conv_vorbis_quality));
+    private void load() {
+        b.spOutExt.setSelection(conv_extension(core.setts.conv_outext));
 
-		b.swCopy.setChecked(core.setts.conv_copy);
+        b.sbAacQ.setProgress(aac_q_progress(core.setts.conv_aac_quality));
+        b.eAacQ.setText(core.int_to_str(core.setts.conv_aac_quality));
 
-		b.swPreserveDate.setChecked(core.setts.conv_file_date_preserve);
-		b.swPlAdd.setChecked(core.setts.conv_new_add_list);
-	}
+        b.sbOpusQ.setProgress((core.setts.conv_opus_quality - 8) / 8);
+        b.eOpusQ.setText(core.int_to_str(core.setts.conv_opus_quality));
 
-	private void save() {
-		core.setts.conv_outext = CoreSettings.conv_extensions[b.spOutExt.getSelectedItemPosition()];
-		core.setts.conv_copy = b.swCopy.isChecked();
+        b.sbVorbisQ.setProgress(vorbis_q_progress(core.setts.conv_vorbis_quality));
+        b.eVorbisQ.setText(core.int_to_str(core.setts.conv_vorbis_quality));
 
-		String s = b.eAacQ.getText().toString();
-		if (s.indexOf("VBR:") == 0)
-			s = s.substring(4);
-		int v = core.str_to_uint(s, 0);
-		if (v != 0)
-			core.setts.conv_aac_quality = v;
+        b.swCopy.setChecked(core.setts.conv_copy);
 
-		v = core.str_to_uint(b.eOpusQ.getText().toString(), 0);
-		if (v != 0)
-			core.setts.conv_opus_quality = v;
+        b.swPreserveDate.setChecked(core.setts.conv_file_date_preserve);
+        b.swPlAdd.setChecked(core.setts.conv_new_add_list);
+    }
 
-		v = core.str_to_uint(b.eVorbisQ.getText().toString(), 0);
-		if (v != 0)
-			core.setts.conv_vorbis_quality = v;
+    private void save() {
+        core.setts.conv_outext = CoreSettings.conv_extensions[b.spOutExt.getSelectedItemPosition()];
+        core.setts.conv_copy = b.swCopy.isChecked();
 
-		core.setts.conv_file_date_preserve = b.swPreserveDate.isChecked();
-		core.setts.conv_new_add_list = b.swPlAdd.isChecked();
-	}
+        String s = b.eAacQ.getText().toString();
+        if (s.indexOf("VBR:") == 0)
+            s = s.substring(4);
+        int v = core.str_to_uint(s, 0);
+        if (v != 0)
+            core.setts.conv_aac_quality = v;
 
-	@Override
-	protected void onDestroy() {
-		save();
-		core.unref();
-		super.onDestroy();
-	}
+        v = core.str_to_uint(b.eOpusQ.getText().toString(), 0);
+        if (v != 0)
+            core.setts.conv_opus_quality = v;
 
-	/** Set 'from/until' position equal to the current playing position */
-	private void pos_set_cur(boolean from) {
-		int sec = core.track().curpos_msec() / 1000;
-		String s = String.format("%d:%02d", sec/60, sec%60);
-		if (from)
-			b.eFrom.setText(s);
-		else
-			b.eUntil.setText(s);
-	}
+        v = core.str_to_uint(b.eVorbisQ.getText().toString(), 0);
+        if (v != 0)
+            core.setts.conv_vorbis_quality = v;
 
-	String iname, oname;
-	private void convert() {
-		b.bStart.setEnabled(false);
-		b.lResult.setText(R.string.conv_working);
+        core.setts.conv_file_date_preserve = b.swPreserveDate.isChecked();
+        core.setts.conv_new_add_list = b.swPlAdd.isChecked();
+    }
 
-		Phiola.ConvertParams p = new Phiola.ConvertParams();
-		p.from_msec = b.eFrom.getText().toString();
-		p.to_msec = b.eUntil.getText().toString();
-		p.copy = b.swCopy.isChecked();
-		p.sample_rate = core.str_to_uint(b.eSampleRate.getText().toString(), 0);
-		p.aac_quality = core.str_to_uint(b.eAacQ.getText().toString(), 0);
-		p.opus_quality = core.str_to_uint(b.eOpusQ.getText().toString(), 0);
+    @Override
+    protected void onDestroy() {
+        save();
+        core.unref();
+        super.onDestroy();
+    }
 
-		int q = core.str_to_uint(b.eVorbisQ.getText().toString(), 0);
-		if (q != 0)
-			p.vorbis_quality = (q + 1) * 10;
+    /** Set 'from/until' position equal to the current playing position */
+    private void pos_set_cur(boolean from) {
+        int sec = core.track().curpos_msec() / 1000;
+        String s = String.format("%d:%02d", sec / 60, sec % 60);
+        if (from)
+            b.eFrom.setText(s);
+        else
+            b.eUntil.setText(s);
+    }
 
-		if (b.swPreserveDate.isChecked())
-			p.flags |= Phiola.ConvertParams.F_DATE_PRESERVE;
-		if (false)
-			p.flags |= Phiola.ConvertParams.F_OVERWRITE;
+    String iname, oname;
 
-		iname = b.eInName.getText().toString();
-		oname = String.format("%s/%s.%s"
-			, b.eOutDir.getText().toString()
-			, b.eOutName.getText().toString()
-			, CoreSettings.conv_extensions[b.spOutExt.getSelectedItemPosition()]);
-		core.phiola.convert(iname, oname, p,
-			(result) -> {
-				Handler mloop = new Handler(Looper.getMainLooper());
-				mloop.post(() -> {
-					convert_done(result);
-				});
-			}
-		);
-	}
+    private void convert() {
+        b.bStart.setEnabled(false);
+        b.lResult.setText(R.string.conv_working);
 
-	private void convert_done(String result) {
-		boolean ok = result.isEmpty();
-		if (ok)
-			b.lResult.setText(R.string.conv_done);
-		else
-			b.lResult.setText(result);
+        Phiola.ConvertParams p = new Phiola.ConvertParams();
+        p.from_msec = b.eFrom.getText().toString();
+        p.to_msec = b.eUntil.getText().toString();
+        p.copy = b.swCopy.isChecked();
+        p.sample_rate = core.str_to_uint(b.eSampleRate.getText().toString(), 0);
+        p.aac_quality = core.str_to_uint(b.eAacQ.getText().toString(), 0);
+        p.opus_quality = core.str_to_uint(b.eOpusQ.getText().toString(), 0);
 
-		if (ok && b.swPlAdd.isChecked()) {
-			core.queue().add(oname);
-		}
+        int q = core.str_to_uint(b.eVorbisQ.getText().toString(), 0);
+        if (q != 0)
+            p.vorbis_quality = (q + 1) * 10;
 
-		if (ok && b.swTrashOrig.isChecked() && !iname.equals(oname)) {
-			trash_input_file(iname);
-		}
-		b.bStart.setEnabled(true);
-	}
+        if (b.swPreserveDate.isChecked())
+            p.flags |= Phiola.ConvertParams.F_DATE_PRESERVE;
+        if (false)
+            p.flags |= Phiola.ConvertParams.F_OVERWRITE;
 
-	private void trash_input_file(String iname) {
-		String e = core.phiola.trash(core.setts.trash_dir, iname);
-		if (!e.isEmpty()) {
-			core.errlog(TAG, "Can't trash file %s: %s", iname, e);
-			return;
-		}
+        iname = b.eInName.getText().toString();
+        oname = String.format("%s/%s.%s"
+                , b.eOutDir.getText().toString()
+                , b.eOutName.getText().toString()
+                , CoreSettings.conv_extensions[b.spOutExt.getSelectedItemPosition()]);
+        core.phiola.convert(iname, oname, p,
+                (result) -> {
+                    Handler mloop = new Handler(Looper.getMainLooper());
+                    mloop.post(() -> {
+                        convert_done(result);
+                    });
+                }
+        );
+    }
 
-		if (qu_cur_pos == -1) return;
+    private void convert_done(String result) {
+        boolean ok = result.isEmpty();
+        if (ok)
+            b.lResult.setText(R.string.conv_done);
+        else
+            b.lResult.setText(result);
 
-		String url = core.queue().get(qu_cur_pos);
-		if (url.equals(iname))
-			core.queue().remove(qu_cur_pos);
-		qu_cur_pos = -1;
-	}
+        if (ok && b.swPlAdd.isChecked()) {
+            core.queue().add(oname);
+        }
+
+        if (ok && b.swTrashOrig.isChecked() && !iname.equals(oname)) {
+            trash_input_file(iname);
+        }
+        b.bStart.setEnabled(true);
+    }
+
+    private void trash_input_file(String iname) {
+        String e = core.phiola.trash(core.setts.trash_dir, iname);
+        if (!e.isEmpty()) {
+            core.errlog(TAG, "Can't trash file %s: %s", iname, e);
+            return;
+        }
+
+        if (qu_cur_pos == -1) return;
+
+        String url = core.queue().get(qu_cur_pos);
+        if (url.equals(iname))
+            core.queue().remove(qu_cur_pos);
+        qu_cur_pos = -1;
+    }
 }

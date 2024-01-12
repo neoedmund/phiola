@@ -17,16 +17,26 @@ import neoe.util.FileUtil;
 import neoe.util.Finder;
 
 public class Lyrics extends Filter {
+    static Lyrics inst;
+
+    public static synchronized Lyrics getInst(MainActivity acti) {
+        if (inst == null) inst = new Lyrics(acti);
+        inst.acti = acti;
+        inst.lastPos = -1;
+        inst.hint = 0;
+        return inst;
+    }
+
     private static final String TAG = "Lyrics";
     private static final int QSIZE = 5;
-    private final MainActivity acti;
-    private final Track track;
+    private MainActivity acti;
+    //   private final Track track;
     private String url;
     private boolean justOpened;
     private int hint;
 
-    public Lyrics(Track track, MainActivity acti) {
-        this.track = track;
+    private Lyrics(MainActivity acti) {
+        // this.track = track;
         this.acti = acti;
     }
 
@@ -44,9 +54,11 @@ public class Lyrics extends Filter {
         String url = t.url;
         this.url = url;
         lines = null;
+        hint = 0;
         lastPos = -1;
-        Log.d("me", "open: " + url);
+        //Log.d("trace1", "open1: " + url);
         lines = cache.get(url);
+        // Log.d("trace1", String.format("open1:%s %s ", acti, (lines == null ? "null" : "" + lines.size())));
         if (lines != null) {
             justOpened = true;
             return 0;
@@ -56,6 +68,7 @@ public class Lyrics extends Filter {
         String url2 = url.substring(0, p1) + ".lrc";
         try {
             lines = readLyrics(url2);
+            //     Log.d("trace1", String.format("read1:%s %s ", acti, (lines == null ? "null" : "" + lines.size())));
             cache.put(url, lines);
             Log.d(TAG, String.format("open:read %,d lines of lyrics", lines.size()));
             if (lines.isEmpty()) lines = null;
@@ -78,7 +91,7 @@ public class Lyrics extends Filter {
             int ms = (int) lines.get(pos).ts;
             ms -= 1000;//why, but needed...
             if (ms < 0) ms = 0;
-            track.seek(ms);
+            acti.track.seek(ms);
             Log.d(TAG, "resume: linepos=" + pos);
             return true;
         } catch (Exception ex) {
@@ -89,6 +102,15 @@ public class Lyrics extends Filter {
 
     public void seeked(int ms) {
         hint = 0;
+    }
+
+    public void completed(TrackHandle t) {
+        try {
+            Log.d(TAG, "completed and set pos to 0(restart): " + url);
+            SmallPersistantMap.put(url, 0);
+        } catch (IOException e) {
+            Log.w(TAG, "completed: " + e);
+        }
     }
 
     private void setLinePos(int p) {
@@ -110,16 +132,18 @@ public class Lyrics extends Filter {
                         b.lineN1.setText(getLineText(p + 1));
                         b.lineP1.setText(getLineText(p - 1));
                         b.lineP2.setText(getLineText(p - 2));
+                        //      Log.w("trace1", String.format("setUILines OK %s %s", acti, b));
                     } catch (Exception ex) {
-                        Log.w(TAG, "setUILines: " + ex);
+                        //     Log.w("trace1", "setUILines: " + ex);
                     }
                 });
                 return true;
             } else {
+                //   Log.w("trace1", "setUILines cannot find b ");
                 return false;
             }
         } catch (Exception ex) {
-            Log.w(TAG, "setUILines: " + ex);
+            //    Log.w("trace1", "setUILines: " + ex);
         }
         return false;
     }
@@ -240,8 +264,9 @@ public class Lyrics extends Filter {
     }
 
     public int process(TrackHandle tr) {
+        //   Log.w("trace1", String.format("Lyrics.process acti=%s lastPos=%d lines=%s", acti, lastPos, lines == null ? "null" : "" + lines.size()));
         if (lines == null) return 0;
-        if (justOpened && track.state() == Track.STATE_PLAYING) {
+        if (justOpened && acti.track.state() == Track.STATE_PLAYING) {
             justOpened = false;
             if (resume()) return 0;
         }

@@ -48,7 +48,7 @@ public class MainActivity extends AppCompatActivity {
     private GUI gui;
     private Queue queue;
     private QueueNotify quenfy;
-    private Track track;
+    public Track track;
     private Filter trk_nfy;
     private Filter lyrics;
     private TrackCtl trackctl;
@@ -71,10 +71,11 @@ public class MainActivity extends AppCompatActivity {
 
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
+        //  Log.d("trace1", "onCreate: mainact");
         if (0 != init_mods())
             return;
         b = MainBinding.inflate(getLayoutInflater());
+        //   Log.d("trace1", String.format("onCreate: mainact %s %s", this,b));
         init_ui();
         init_system();
 
@@ -117,9 +118,11 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void onDestroy() {
+        //  Log.d("trace1", "onDestroy: mainact");
         if (core != null) {
             core.dbglog(TAG, "onDestroy()");
             track.filter_rm(trk_nfy);
+            track.filter_rm(lyrics);
             trackctl.close();
             queue.nfy_rm(quenfy);
             core.close();
@@ -287,10 +290,12 @@ public class MainActivity extends AppCompatActivity {
         return true;
     }
 
+
     /**
      * Initialize core and modules
      */
     private int init_mods() {
+        //   Log.d("trace1", "init: init_mods");
         core = Core.init_once(getApplicationContext());
         if (core == null)
             return -1;
@@ -307,10 +312,10 @@ public class MainActivity extends AppCompatActivity {
         };
         queue.nfy_add(quenfy);
         track = core.track();
-        lyrics = new Lyrics(track, this);
+        lyrics = Lyrics.getInst(this);
         trk_nfy = new Filter() {
             public int open(TrackHandle t) {
-                lyrics.open(t);
+                // lyrics.open(t);
                 return track_opening(t);
             }
 
@@ -323,15 +328,21 @@ public class MainActivity extends AppCompatActivity {
             }
 
             public int process(TrackHandle t) {
-                lyrics.process(t);
+                // lyrics.process(t);
                 return track_update(t);
             }
 
-            public void seeked(int ms) {
-                lyrics.seeked(ms);
-            }
+            // public void seeked(int ms) {
+//                lyrics.seeked(ms);
+//            }
+//
+//            public void completed(TrackHandle t) {
+//                lyrics.completed(t);
+//            }
         };
         track.filter_add(trk_nfy);
+        track.filter_add(lyrics);
+
         trackctl = new TrackCtl(core, this);
         trackctl.connect();
         trec = track.trec;
