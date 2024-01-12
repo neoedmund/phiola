@@ -111,14 +111,6 @@ public class Lyrics extends Filter {
             Log.w(TAG, "close: " + e);
         }
     }
-    public void completed(TrackHandle t) {
-        try {
-            Log.d(TAG, "completed and set pos to 0(restart): " + url);
-            SmallPersistantMap.put(url, 0);
-        } catch (IOException e) {
-            Log.w(TAG, "completed: " + e);
-        }
-    }
 
     private void setLinePos(int p) {
         if (lines == null) return;
