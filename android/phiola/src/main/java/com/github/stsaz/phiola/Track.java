@@ -52,8 +52,8 @@ abstract class Filter {
     }
 
     /**not same with close(), right?*/
-    public void completed(TrackHandle t) {
-    }
+//    public void completed(TrackHandle t) {
+//    }
 
 }
 
@@ -466,12 +466,12 @@ class Track {
         trec = null;
     }
 
-    private void trk_completed(TrackHandle t) {
-        for (Filter f : filters.values()) {
-
-            f.completed(t);
-        }
-    }
+//    private void trk_completed(TrackHandle t) {
+//        for (Filter f : filters.values()) {
+//
+//            f.completed(t);
+//        }
+//    }
 
     private void trk_close(TrackHandle t) {
         t.state = STATE_NONE;

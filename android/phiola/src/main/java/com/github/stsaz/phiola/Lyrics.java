@@ -103,7 +103,14 @@ public class Lyrics extends Filter {
     public void seeked(int ms) {
         hint = 0;
     }
-
+    public void close(TrackHandle t) {
+        try {
+            Log.d(TAG, "close and set pos to 0(restart): " + url);
+            SmallPersistantMap.put(url, 0);
+        } catch (IOException e) {
+            Log.w(TAG, "close: " + e);
+        }
+    }
     public void completed(TrackHandle t) {
         try {
             Log.d(TAG, "completed and set pos to 0(restart): " + url);
