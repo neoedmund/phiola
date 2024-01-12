@@ -20,6 +20,8 @@ It's a free and open-source project, and you can use it as a standalone applicat
 ![](res/ss1lrc_s.webp)
 * resume last play position
 * other UI customization
+## known problem
+* seek -10 sec and seek +10 sec on work properly on large audio, which seek is slow
 
 ----------
 
