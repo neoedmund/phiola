@@ -467,22 +467,20 @@ class Track {
     }
 
     private void trk_completed(TrackHandle t) {
-        for (int i = filters.size() - 1; i >= 0; i--) {
-            Filter f = filters.get(i);
+        for (Filter f : filters.values()) {
+
             f.completed(t);
         }
     }
 
     private void trk_close(TrackHandle t) {
         t.state = STATE_NONE;
-        for (int i = filters.size() - 1; i >= 0; i--) {
-            Filter f = filters.get(i);
+        for (Filter f : filters.values()) {
             core.dbglog(TAG, "closing filter %s", f);
             f.close(t);
         }
 
-        for (int i = filters.size() - 1; i >= 0; i--) {
-            Filter f = filters.get(i);
+        for (Filter f : filters.values()) {
             f.closed(t);
         }
 
