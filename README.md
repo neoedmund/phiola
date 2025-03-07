@@ -14,6 +14,8 @@ It's a free and open-source project, and you can use it as a standalone applicat
 
 # neoe patches
 
+Updates: come on, seems not compiles using new Android Studio, maybe try others like  OxygenCobalt/Auxio .
+
 ![](res/phiola.svg)![](res/phiola.svg)  ☀♫☂♬
 
 * external .lrc lyrics support
